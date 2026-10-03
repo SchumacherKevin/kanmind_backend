@@ -57,6 +57,7 @@ class EmailCheckView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
+        """Validate the email query parameter and return the user data."""
         serializer = EmailQuerySerializer(data=request.query_params)
         serializer.is_valid(raise_exception=True)
         user = get_object_or_404(
