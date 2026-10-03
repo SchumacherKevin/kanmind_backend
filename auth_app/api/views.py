@@ -1,10 +1,17 @@
+from django.contrib.auth.models import User
+from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.authtoken.models import Token
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .serializers import LoginSerializer, RegistrationSerializer
+from .serializers import (
+    EmailQuerySerializer,
+    LoginSerializer,
+    RegistrationSerializer,
+    UserSerializer,
+)
 
 
 def build_auth_response(user):
@@ -42,3 +49,16 @@ class LoginView(APIView):
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data['user']
         return Response(build_auth_response(user), status=status.HTTP_200_OK)
+
+
+class EmailCheckView(APIView):
+    """Return the user for the given email or 404."""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        serializer = EmailQuerySerializer(data=request.query_params)
+        serializer.is_valid(raise_exception=True)
+        user = get_object_or_404(
+            User, email=serializer.validated_data['email'])
+        return Response(UserSerializer(user).data, status=status.HTTP_200_OK)
