@@ -1,4 +1,5 @@
 from django.db.models import Q
+from django.shortcuts import get_object_or_404
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 
@@ -7,6 +8,7 @@ from kanban_app.api.serializers import (
     BoardDetailSerializer,
     BoardListSerializer,
     BoardUpdateSerializer,
+    TaskSerializer,
 )
 from kanban_app.models import Board
 
@@ -39,3 +41,20 @@ class BoardDetailView(generics.RetrieveUpdateDestroyAPIView):
         if self.request.method == "PATCH":
             return BoardUpdateSerializer
         return BoardDetailSerializer
+
+
+class TaskCreateView(generics.CreateAPIView):
+    """Create a task on a board the user belongs to."""
+
+    serializer_class = TaskSerializer
+    permission_classes = [IsAuthenticated, IsBoardMemberOrOwner]
+
+    def create(self, request, *args, **kwargs):
+        """Check board existence and membership before validating."""
+        board = get_object_or_404(Board, pk=request.data.get("board"))
+        self.check_object_permissions(request, board)
+        return super().create(request, *args, **kwargs)
+
+    def perform_create(self, serializer):
+        """Store the requesting user as the task creator."""
+        serializer.save(created_by=self.request.user)

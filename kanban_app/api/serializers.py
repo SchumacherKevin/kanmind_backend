@@ -84,3 +84,44 @@ class BoardUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Board
         fields = ["id", "title", "owner_data", "members_data", "members"]
+
+
+class TaskSerializer(TaskNestedSerializer):
+    """Serialize tasks with board and writable assignee/reviewer ids."""
+
+    assignee_id = serializers.PrimaryKeyRelatedField(
+        source="assignee",
+        queryset=User.objects.all(),
+        write_only=True,
+        required=False,
+        allow_null=True,
+    )
+    reviewer_id = serializers.PrimaryKeyRelatedField(
+        source="reviewer",
+        queryset=User.objects.all(),
+        write_only=True,
+        required=False,
+        allow_null=True,
+    )
+
+    class Meta(TaskNestedSerializer.Meta):
+        fields = [
+            "id", "board", "title", "description", "status", "priority",
+            "assignee", "reviewer", "assignee_id", "reviewer_id",
+            "due_date", "comments_count",
+        ]
+
+    def validate(self, attrs):
+        """Ensure assignee and reviewer belong to the task's board."""
+        board = attrs.get("board")
+        for field in ("assignee", "reviewer"):
+            user = attrs.get(field)
+            if user and not self._is_board_user(board, user):
+                raise serializers.ValidationError(
+                    {f"{field}_id": "User must be a member of the board."}
+                )
+        return attrs
+
+    def _is_board_user(self, board, user):
+        """Return True if the user owns or is a member of the board."""
+        return board.owner == user or board.members.filter(id=user.id).exists()
