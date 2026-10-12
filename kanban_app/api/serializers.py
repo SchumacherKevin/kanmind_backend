@@ -2,7 +2,8 @@ from django.contrib.auth.models import User
 from rest_framework import serializers
 
 from auth_app.api.serializers import UserSerializer
-from kanban_app.models import Board, Priority, Status, Task
+from kanban_app.api.permissions import is_board_user
+from kanban_app.models import Board, Comment, Priority, Status, Task
 
 
 class BoardListSerializer(serializers.ModelSerializer):
@@ -113,15 +114,42 @@ class TaskSerializer(TaskNestedSerializer):
 
     def validate(self, attrs):
         """Ensure assignee and reviewer belong to the task's board."""
-        board = attrs.get("board")
+        board = attrs.get("board") or self.instance.board
         for field in ("assignee", "reviewer"):
             user = attrs.get(field)
-            if user and not self._is_board_user(board, user):
+            if user and not is_board_user(board, user):
                 raise serializers.ValidationError(
                     {f"{field}_id": "User must be a member of the board."}
                 )
         return attrs
 
-    def _is_board_user(self, board, user):
-        """Return True if the user owns or is a member of the board."""
-        return board.owner == user or board.members.filter(id=user.id).exists()
+
+class TaskUpdateSerializer(TaskSerializer):
+    """Serialize task updates; the board may not be changed."""
+
+    board = serializers.PrimaryKeyRelatedField(
+        queryset=Board.objects.all(), write_only=True, required=False
+    )
+
+    class Meta(TaskSerializer.Meta):
+        fields = [
+            "id", "board", "title", "description", "status", "priority",
+            "assignee", "reviewer", "assignee_id", "reviewer_id", "due_date",
+        ]
+
+    def validate_board(self, value):
+        """Reject any attempt to move the task to another board."""
+        if value != self.instance.board:
+            raise serializers.ValidationError(
+                "Changing the board is not allowed.")
+        return value
+
+
+class CommentSerializer(serializers.ModelSerializer):
+    """Serialize comments with author and task information."""
+
+    author = serializers.ReadOnlyField(source="author.get_full_name")
+
+    class Meta:
+        model = Comment
+        fields = ["id", "created_at", "author", "content"]
