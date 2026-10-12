@@ -86,8 +86,10 @@ class TaskCreateView(generics.CreateAPIView):
 
     def create(self, request, *args, **kwargs):
         """Check board existence and membership before validating."""
-        board = get_object_or_404(Board, pk=request.data.get("board"))
-        self.check_object_permissions(request, board)
+        board_id = str(request.data.get("board", ""))
+        if board_id.isdigit():
+            board = get_object_or_404(Board, pk=board_id)
+            self.check_object_permissions(request, board)
         return super().create(request, *args, **kwargs)
 
     def perform_create(self, serializer):
