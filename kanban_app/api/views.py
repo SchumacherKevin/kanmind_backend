@@ -10,7 +10,7 @@ from kanban_app.api.serializers import (
     BoardUpdateSerializer,
     TaskSerializer,
 )
-from kanban_app.models import Board
+from kanban_app.models import Board, Task
 
 
 class BoardListCreateView(generics.ListCreateAPIView):
@@ -58,3 +58,27 @@ class TaskCreateView(generics.CreateAPIView):
     def perform_create(self, serializer):
         """Store the requesting user as the task creator."""
         serializer.save(created_by=self.request.user)
+
+
+class AssignedToMeView(generics.ListAPIView):
+    """List tasks assigned to the authenticated user."""
+
+    serializer_class = TaskSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        """Return tasks assigned to the authenticated user."""
+        user = self.request.user
+        return Task.objects.filter(assignee=user)
+
+
+class ReviewingView(generics.ListAPIView):
+    """List tasks where the authenticated user is the reviewer."""
+
+    serializer_class = TaskSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        """Return tasks where the authenticated user is the reviewer."""
+        user = self.request.user
+        return Task.objects.filter(reviewer=user)
