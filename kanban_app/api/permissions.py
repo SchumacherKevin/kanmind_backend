@@ -1,6 +1,7 @@
 from django.shortcuts import get_object_or_404
-from django.tasks import Task
 from rest_framework.permissions import BasePermission
+
+from kanban_app.models import Task
 
 
 def is_board_user(board, user):

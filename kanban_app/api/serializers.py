@@ -3,7 +3,7 @@ from rest_framework import serializers
 
 from auth_app.api.serializers import UserSerializer
 from kanban_app.api.permissions import is_board_user
-from kanban_app.models import Board, Comment, Priority, Status, Task
+from kanban_app.models import Board, Comment, Task
 
 
 class BoardListSerializer(serializers.ModelSerializer):
@@ -12,11 +12,11 @@ class BoardListSerializer(serializers.ModelSerializer):
     members = serializers.PrimaryKeyRelatedField(
         many=True, queryset=User.objects.all(), write_only=True
     )
-    owner_id = serializers.ReadOnlyField(source="owner.id")
-    member_count = serializers.SerializerMethodField()
-    ticket_count = serializers.SerializerMethodField()
-    tasks_to_do_count = serializers.SerializerMethodField()
-    tasks_high_prio_count = serializers.SerializerMethodField()
+    owner_id = serializers.ReadOnlyField()
+    member_count = serializers.IntegerField(read_only=True)
+    ticket_count = serializers.IntegerField(read_only=True)
+    tasks_to_do_count = serializers.IntegerField(read_only=True)
+    tasks_high_prio_count = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Board
@@ -25,29 +25,13 @@ class BoardListSerializer(serializers.ModelSerializer):
             "tasks_to_do_count", "tasks_high_prio_count", "owner_id",
         ]
 
-    def get_member_count(self, obj):
-        """Return the number of board members."""
-        return obj.members.count()
-
-    def get_ticket_count(self, obj):
-        """Return the total number of tasks on the board."""
-        return obj.tasks.count()
-
-    def get_tasks_to_do_count(self, obj):
-        """Return the number of tasks with status 'to-do'."""
-        return obj.tasks.filter(status=Status.TO_DO).count()
-
-    def get_tasks_high_prio_count(self, obj):
-        """Return the number of tasks with priority 'high'."""
-        return obj.tasks.filter(priority=Priority.HIGH).count()
-
 
 class TaskNestedSerializer(serializers.ModelSerializer):
     """Serialize tasks for nested representation in board details."""
 
     assignee = UserSerializer(read_only=True)
     reviewer = UserSerializer(read_only=True)
-    comments_count = serializers.SerializerMethodField()
+    comments_count = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Task
@@ -56,15 +40,11 @@ class TaskNestedSerializer(serializers.ModelSerializer):
             "assignee", "reviewer", "due_date", "comments_count",
         ]
 
-    def get_comments_count(self, obj):
-        """Return the number of comments on the task."""
-        return obj.comments.count()
-
 
 class BoardDetailSerializer(serializers.ModelSerializer):
     """Serialize boards for the detail view, including members and tasks."""
 
-    owner_id = serializers.ReadOnlyField(source="owner.id")
+    owner_id = serializers.ReadOnlyField()
     members = UserSerializer(many=True, read_only=True)
     tasks = TaskNestedSerializer(many=True, read_only=True)
 
@@ -146,7 +126,7 @@ class TaskUpdateSerializer(TaskSerializer):
 
 
 class CommentSerializer(serializers.ModelSerializer):
-    """Serialize comments with author and task information."""
+    """Serialize comments with read-only author name and creation timestamp."""
 
     author = serializers.ReadOnlyField(source="author.get_full_name")
 
