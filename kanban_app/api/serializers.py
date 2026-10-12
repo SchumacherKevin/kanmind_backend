@@ -6,12 +6,24 @@ from kanban_app.api.permissions import is_board_user
 from kanban_app.models import Board, Comment, Task
 
 
+class UserIdListField(serializers.ListField):
+    """Accept a list of user ids and load all users with one query."""
+
+    child = serializers.IntegerField()
+
+    def to_internal_value(self, data):
+        """Return the users for the given ids or raise a validation error."""
+        ids = set(super().to_internal_value(data))
+        users = list(User.objects.filter(pk__in=ids))
+        if len(users) != len(ids):
+            raise serializers.ValidationError("Some users do not exist.")
+        return users
+
+
 class BoardListSerializer(serializers.ModelSerializer):
     """Serialize boards for the list view and board creation."""
 
-    members = serializers.PrimaryKeyRelatedField(
-        many=True, queryset=User.objects.all(), write_only=True
-    )
+    members = UserIdListField(write_only=True)
     owner_id = serializers.ReadOnlyField()
     member_count = serializers.IntegerField(read_only=True)
     ticket_count = serializers.IntegerField(read_only=True)
@@ -58,9 +70,7 @@ class BoardUpdateSerializer(serializers.ModelSerializer):
 
     owner_data = UserSerializer(source="owner", read_only=True)
     members_data = UserSerializer(source="members", many=True, read_only=True)
-    members = serializers.PrimaryKeyRelatedField(
-        many=True, queryset=User.objects.all(), write_only=True
-    )
+    members = UserIdListField(write_only=True)
 
     class Meta:
         model = Board
