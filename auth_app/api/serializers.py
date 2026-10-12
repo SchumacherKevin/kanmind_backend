@@ -4,7 +4,9 @@ from rest_framework import serializers
 
 
 class RegistrationSerializer(serializers.Serializer):
-    """Validates registration data (fullname, email, password, repeated_password)."""
+    """Validates registration data
+    (fullname, email, password, repeated_password)."""
+
     fullname = serializers.CharField(max_length=150)
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True)

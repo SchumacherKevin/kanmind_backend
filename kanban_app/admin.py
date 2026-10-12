@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from kanban_app.models import Board, Task, Comment
+from kanban_app.models import Board, Comment, Task
 
 
 @admin.register(Board)

@@ -35,7 +35,8 @@ class RegistrationView(APIView):
         serializer = RegistrationSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
-        return Response(build_auth_response(user), status=status.HTTP_201_CREATED)
+        return Response(build_auth_response(user),
+                        status=status.HTTP_201_CREATED)
 
 
 class LoginView(APIView):

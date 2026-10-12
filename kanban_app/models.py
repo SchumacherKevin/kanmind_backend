@@ -51,14 +51,17 @@ class Task(models.Model):
         max_length=20, choices=Priority.choices, default=Priority.MEDIUM
     )
     assignee = models.ForeignKey(
-        User, on_delete=models.SET_NULL, null=True, blank=True, related_name="assigned_tasks"
+        User, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="assigned_tasks"
     )
     reviewer = models.ForeignKey(
-        User, on_delete=models.SET_NULL, null=True, blank=True, related_name="review_tasks"
+        User, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="review_tasks"
     )
     due_date = models.DateField(null=True, blank=True)
     created_by = models.ForeignKey(
-        User, on_delete=models.SET_NULL, null=True, blank=True, related_name="created_tasks"
+        User, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="created_tasks"
     )
 
     class Meta:
@@ -89,5 +92,7 @@ class Comment(models.Model):
         ordering = ["created_at"]
 
     def __str__(self):
-        """return a string representation of the comment, showing the author and the task."""
+        """return a string representation of the comment,
+        showing the author and the task."""
+
         return f"Comment by {self.author} on {self.task}"

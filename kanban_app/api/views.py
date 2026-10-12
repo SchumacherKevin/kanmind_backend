@@ -2,12 +2,12 @@ from django.db.models import Q
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 
+from kanban_app.api.permissions import IsBoardMemberOrOwner
 from kanban_app.api.serializers import (
     BoardDetailSerializer,
     BoardListSerializer,
-    BoardUpdateSerializer
+    BoardUpdateSerializer,
 )
-from kanban_app.api.permissions import IsBoardMemberOrOwner
 from kanban_app.models import Board
 
 
